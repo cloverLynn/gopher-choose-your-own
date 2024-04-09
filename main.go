@@ -2,6 +2,7 @@ package main
 
 import (
 	json2 "encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -25,9 +26,12 @@ func readJSON(s string) Story {
 	}
 	var json Story
 	json2.Unmarshal([]byte(file), &json)
-
+	fmt.Printf("%+v\n", json)
 	return json
+}
 
+// TODO httpHandler
+func httpHandler() any {
 	return nil
 }
 
