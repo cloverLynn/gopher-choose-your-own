@@ -3,6 +3,7 @@ package main
 import (
 	json2 "encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 )
 
@@ -30,16 +31,25 @@ func readJSON(s string) Story {
 	return json
 }
 
-// TODO httpHandler
-func httpHandler() any {
-	return nil
+func httpHandler(story Story) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL.Path
+		_, exists := story[url]
+		if exists {
+			//TODO implemnt serve page function
+		} else {
+			//TODO continue building out
+		}
+	}
 }
 
-// TODO Server Func
-func startServer() any {
-	return nil
+func startServer(story Story) {
+	fmt.Println("Starting the server on :8080")
+	handler := httpHandler(story)
+	http.ListenAndServe(":8080", handler)
 }
 
 func main() {
-	readJSON("gopher.json")
+	story := readJSON("gopher.json")
+	startServer(story)
 }
