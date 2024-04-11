@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Story map[string]Chapter
@@ -27,29 +28,50 @@ func readJSON(s string) Story {
 	}
 	var json Story
 	json2.Unmarshal([]byte(file), &json)
-	fmt.Printf("%+v\n", json)
 	return json
 }
 
-func httpHandler(story Story) http.HandlerFunc {
+func httpHandler(story Story, fallback http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		url := r.URL.Path
+		url := strings.Split(r.URL.Path, "/")[1]
 		_, exists := story[url]
+		fmt.Println(story[url])
 		if exists {
-			//TODO implemnt serve page function
+			http.ServeFile(w, r, "index.html")
 		} else {
-			//TODO continue building out
+			fallback.ServeHTTP(w, r)
 		}
 	}
 }
 
-func startServer(story Story) {
+func startServer(story Story, mux http.Handler) {
 	fmt.Println("Starting the server on :8080")
-	handler := httpHandler(story)
+	handler := httpHandler(story, mux)
 	http.ListenAndServe(":8080", handler)
+}
+
+/*func displayChapter(chapter Chapter) {
+	func hello(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello, world!")
+	}
+}*/
+
+func defaultMux() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", intro)
+	mux.HandleFunc("/test", test)
+	return mux
+}
+
+func intro(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Intro")
+}
+func test(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Testing")
 }
 
 func main() {
 	story := readJSON("gopher.json")
-	startServer(story)
+	mux := defaultMux()
+	startServer(story, mux)
 }
