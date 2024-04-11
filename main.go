@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	json2 "encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -30,10 +33,6 @@ func readJSON(s string) Story {
 	var json Story
 	json2.Unmarshal([]byte(file), &json)
 	return json
-}
-
-type Person struct {
-	UserName string
 }
 
 func httpHandler(story Story, fallback http.Handler) http.HandlerFunc {
@@ -61,22 +60,56 @@ func displayChapter(chapter Chapter, w http.ResponseWriter) {
 	t.Execute(w, chapter)
 }
 
+func cliGame(story Story) {
+	showChapter(story["intro"], story, "intro")
+}
+
+func showChapter(chapter Chapter, story Story, url string) {
+	fmt.Println(chapter.Title)
+	for _, p := range chapter.Paragraphs {
+		fmt.Println(p)
+	}
+	for n, p := range chapter.Options {
+		fmt.Printf("%d) ", n)
+		fmt.Println(p.Text)
+	}
+	if url == "home" {
+		fmt.Println("Thanks for playing!!")
+		os.Exit(0)
+	}
+	reader := bufio.NewReader(os.Stdin)
+	res, _ := reader.ReadString('\n')
+	res = strings.TrimRight(res, "\n")
+	res = strings.TrimSpace(res)
+	i, err := strconv.Atoi(res)
+	if err != nil {
+		panic(err)
+	}
+	next := chapter.Options[i].Chapter
+	newChapter := story[chapter.Options[i].Chapter]
+	showChapter(newChapter, story, next)
+}
+
 func defaultMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", intro)
-	mux.HandleFunc("/test", test)
 	return mux
 }
 
 func intro(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Intro")
 }
-func test(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Testing")
-}
 
 func main() {
+	cli := flag.Bool("c", false, "CLI option")
+	flag.Parse()
 	story := readJSON("gopher.json")
-	mux := defaultMux()
-	startServer(story, mux)
+	if !*cli {
+		mux := defaultMux()
+		startServer(story, mux)
+	} else {
+		fmt.Println("Welcome to the CLI version of this game")
+		cliGame(story)
+	}
+
 }
