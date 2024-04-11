@@ -1,5 +1,15 @@
 <html lang="en">
-<body>
-   Test
-</body>
+   <body>
+      <h1>
+         {{.Title}}!
+      </h1>
+      {{range .Paragraphs }}
+         <p>{{.}}</p>
+      {{end}}
+      <ul>
+         {{range .Options}}
+            <li><a href="/{{.Chapter}}">{{.Text}}</a></li>
+         {{end}}
+      </ul>
+   </body>
 </html>
