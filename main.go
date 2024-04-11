@@ -3,6 +3,7 @@ package main
 import (
 	json2 "encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"strings"
@@ -31,13 +32,16 @@ func readJSON(s string) Story {
 	return json
 }
 
+type Person struct {
+	UserName string
+}
+
 func httpHandler(story Story, fallback http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := strings.Split(r.URL.Path, "/")[1]
 		_, exists := story[url]
-		fmt.Println(story[url])
 		if exists {
-			http.ServeFile(w, r, "index.html")
+			displayChapter(story[url], w)
 		} else {
 			fallback.ServeHTTP(w, r)
 		}
@@ -50,11 +54,12 @@ func startServer(story Story, mux http.Handler) {
 	http.ListenAndServe(":8080", handler)
 }
 
-/*func displayChapter(chapter Chapter) {
-	func hello(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, world!")
-	}
-}*/
+func displayChapter(chapter Chapter, w http.ResponseWriter) {
+	fmt.Println("Title: " + chapter.Title)
+	t := template.New("index.html")
+	t, _ = t.ParseFiles("index.html")
+	t.Execute(w, chapter)
+}
 
 func defaultMux() *http.ServeMux {
 	mux := http.NewServeMux()
